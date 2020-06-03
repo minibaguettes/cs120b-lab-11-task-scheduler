@@ -16,68 +16,6 @@
 #include "timer.h"
 
 
-// returns '\0' if no key pressed, else returns char '1', '2', .. '9', 'A', ...
-// if multiple keyspressed, returns leftmost-topmost one
-// keybad must be connected to port c
-/* keypad arrangement
- 
-   		PC4 PC5 PC6 PC7
-	col	 1   2   3   4 
-   row	
-   PC0   1  	 1   2   3   A
-   PC1   2	 4   5   6   B
-   PC2   3	 7   8   9   C
-   PC3   4	 *   0   #   D
-
-*/
-//unsigned char GetKeypadKey() {
-enum GetKeypadKey_States { keypad };
-int GetKeypadSMTick (int state) {
-	switch (state) {
-		case keypad:
-			state = keypad;
-			break;
-		default:
-			state = keypad;
-			break;
-	}
-	switch (state) {
-		case keypad:
-			PORTC = 0xEF;	// enable col 4 with 0, disable others with 1's
-			asm("nop");	// add a delay to allow PORTC to stabilize before checking 
-			if (GetBit(PINC, 0) == 0) { return ('1'); }
-			if (GetBit(PINC, 1) == 0) { return ('4'); }
-			if (GetBit(PINC, 2) == 0) { return ('7'); }
-			if (GetBit(PINC, 3) == 0) { return ('*'); }
-
-			// check keys in col 2
-			PORTC = 0xDF;	// enable col 5 with 0, disable others with 1's
-			asm("nop");	// add a delay to allow PORTC to stabilize before checking
-			if (GetBit(PINC, 0) == 0) { return('2'); }
-			if (GetBit(PINC, 1) == 0) { return('5'); }
-			if (GetBit(PINC, 2) == 0) { return('8'); }
-			if (GetBit(PINC, 3) == 0) { return('0'); }
-
-			// check keys in col 3
-			PORTC = 0xBF;	// enable col 6 with 0, disable others with 1's
-			asm("nop");	// add a delay to allow PORTC to stabilize before checking
-			if (GetBit(PINC, 0) == 0) { return('3'); }
-				if (GetBit(PINC, 1) == 0) { return('6'); }
-			if (GetBit(PINC, 2) == 0) { return('9'); }
-			if (GetBit(PINC, 3) == 0) { return('#'); }
-
-			// check keys in col 4
-			PORTC = 0x7F;
-			asm("nop");
-			if (GetBit(PINC, 0) == 0) { return('A'); }
-			if (GetBit(PINC, 1) == 0) { return('B'); }
-			if (GetBit(PINC, 2) == 0) { return('C'); }
-			if (GetBit(PINC, 3) == 0) { return('D'); }
-			break;
-	}
-	return ('\0');	// default value
-}
-
 // --------------------find GCD function----------------------------------------------------
 unsigned long int findGCD(unsigned long int a, unsigned long int b) {
 	unsigned long int c;
@@ -211,6 +149,93 @@ int displaySMTick(int state) {
 	return state;
 }
 
+// returns '\0' if no key pressed, else returns char '1', '2', .. '9', 'A', ...
+// if multiple keyspressed, returns leftmost-topmost one
+// keybad must be connected to port c
+/* keypad arrangement
+ 
+   		PC4 PC5 PC6 PC7
+	col	 1   2   3   4 
+   row	
+   PC0   1  	 1   2   3   A
+   PC1   2	 4   5   6   B
+   PC2   3	 7   8   9   C
+   PC3   4	 *   0   #   D
+
+*/
+unsigned char tmp = 0x00;
+enum GetKeypadKey_States { keypad };
+int GetKeypadSMTick (int state) {
+	switch (state) {
+		case keypad:
+			state = keypad;
+			break;
+		default:
+			state = keypad;
+			break;
+	}
+	switch (state) {
+		case keypad:
+			pause = 1;
+			PORTC = 0xEF;	// enable col 4 with 0, disable others with 1's
+			
+			tmp = '\0';
+
+			asm("nop");	// add a delay to allow PORTC to stabilize before checking 
+			if (GetBit(PINC, 0) == 0) { tmp = '1'; }
+			if (GetBit(PINC, 1) == 0) { tmp = '4'; }
+			if (GetBit(PINC, 2) == 0) { tmp = '7'; }
+			if (GetBit(PINC, 3) == 0) { tmp = '*'; }
+
+			// check keys in col 2
+			PORTC = 0xDF;	// enable col 5 with 0, disable others with 1's
+			asm("nop");	// add a delay to allow PORTC to stabilize before checking
+			if (GetBit(PINC, 0) == 0) { tmp = '2'; }
+			if (GetBit(PINC, 1) == 0) { tmp = '5'; }
+			if (GetBit(PINC, 2) == 0) { tmp = '8'; }
+			if (GetBit(PINC, 3) == 0) { tmp = '0'; }
+
+			// check keys in col 3
+			PORTC = 0xBF;	// enable col 6 with 0, disable others with 1's
+			asm("nop");	// add a delay to allow PORTC to stabilize before checking
+			if (GetBit(PINC, 0) == 0) { tmp = '3'; }
+			if (GetBit(PINC, 1) == 0) { tmp = '6'; }
+			if (GetBit(PINC, 2) == 0) { tmp = '9'; }
+			if (GetBit(PINC, 3) == 0) { tmp = '#'; }
+
+			// check keys in col 4
+			PORTC = 0x7F;
+			asm("nop");
+			if (GetBit(PINC, 0) == 0) { tmp = 'A'; }
+			if (GetBit(PINC, 1) == 0) { tmp = 'B'; }
+			if (GetBit(PINC, 2) == 0) { tmp = 'C'; }
+			if (GetBit(PINC, 3) == 0) { tmp = 'D'; }
+			break;
+	}
+	switch(tmp) {
+		case '\0': PORTB = 0x1F;	break;	// all 5 LEDs on
+		case '1': PORTB = 0x01;		break;	// hex equivalent
+		case '2': PORTB = 0x02; 	break;
+		case '3': PORTB = 0x03;		break;
+		case '4': PORTB = 0x04;		break;
+		case '5': PORTB = 0x05;		break;
+		case '6': PORTB = 0x06;		break;
+		case '7': PORTB = 0x07;		break;
+		case '8': PORTB = 0x08;		break;
+		case '9': PORTB = 0x09;		break;
+		case 'A': PORTB = 0x0A;		break;
+		case 'B': PORTB = 0x0B;		break;
+		case 'C': PORTB = 0x0C;		break;
+		case 'D': PORTB = 0x0D;		break;
+		case '*': PORTB = 0x0E;		break;
+		case '0': PORTB = 0x00;		break;
+		case '#': PORTB = 0x0F;		break;
+		default: PORTB = 0x1B;		break;	// should never occur.  middle LED off.
+	}
+	
+}
+
+
 int main(void) {
 //	unsigned char x;
 	DDRA = 0x00;	PORTA = 0xFF;
@@ -276,28 +301,4 @@ int main(void) {
 		TimerFlag = 0;
 	}
 	return 0;
-
-
-/*		x = GetKeypadKey();
-		switch(x) {
-			case '\0': PORTB = 0x1F;	break;	// all 5 LEDs on
-			case '1': PORTB = 0x01;		break;	// hex equivalent
-			case '2': PORTB = 0x02; 	break;
-			case '3': PORTB = 0x03;		break;
-			case '4': PORTB = 0x04;		break;
-			case '5': PORTB = 0x05;		break;
-			case '6': PORTB = 0x06;		break;
-			case '7': PORTB = 0x07;		break;
-			case '8': PORTB = 0x08;		break;
-			case '9': PORTB = 0x09;		break;
-			case 'A': PORTB = 0x0A;		break;
-			case 'B': PORTB = 0x0B;		break;
-			case 'C': PORTB = 0x0C;		break;
-			case 'D': PORTB = 0x0D;		break;
-			case '*': PORTB = 0x0E;		break;
-			case '0': PORTB = 0x00;		break;
-			case '#': PORTB = 0x0F;		break;
-			default: PORTB = 0x1B;		break;	// should never occur.  middle LED off.
-		}
-*/
 }
