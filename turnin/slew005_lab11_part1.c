@@ -1,11 +1,14 @@
-/*	Author: lab
+/*	Author: Serena Lew
  *	Partner(s) Name: none
- *	Lab Section:
- *	Assignment: Lab #  Exercise #
- *	Exercise Description: [optional - include for your own benefit]
+ *	Lab Section: 027
+ *	Assignment: Lab #11  Exercise #1
+ *	Exercise Description:
+ *			Modify keypad code to be an SM task.
  *
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
+ *
+ *	Video Link: https://youtu.be/w6igCciSFZI
  */
 #include <avr/io.h>
 #ifdef _SIMULATE_
